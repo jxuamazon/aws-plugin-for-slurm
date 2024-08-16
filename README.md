@@ -306,6 +306,26 @@ If the Slurm user is not root, you could create the cron for that user instead `
 
 You can use AWS CloudFormation to provision a sample pre-configured headnode on AWS. To proceed, create a new CloudFormation stack using the template that is provided in [`template.yaml`](template.yaml). You will need to specify an existing VPC and two subnets that are in two different availability zones where the head node and the compute nodes will be launched.
 
+Step 1. First, we will need to build an AMI that has proper packages installed to reduce the provision time and the inconsistencies in package installation during bootstrap for both the headnode and compute node.  Create an EC2 with /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2, and run the scripts below to install the packages. 
+```
+#!/bin/bash -x
+# Install packages
+yum update -y
+amazon-linux-extras install epel -y
+yum install nfs-utils python2 python2-pip python3 python3-pip -y
+yum install munge munge-libs munge-devel openssl openssl-devel pam-devel numactl numactl-devel hwloc hwloc-devel lua lua-devel readline-devel rrdtool-devel ncurses-devel man2html libibmad libibumad rpm-build libyaml http-parser-devel json-c-devel perl-devel -y
+yum groupinstall "Development Tools" -y
+pip3 install boto3
+pip3 install awscli
+
+```
+Step 2. Create an AMI off the EC2 
+
+Step 3. Create a "aws:ec2:image" type entry in SSM Parameter Store, with name "/slurm-plugin/ami-id" and value of the AMI ID from step 2.
+
+Step 4.  Deploy stack using template.yaml , using "/slurm-plugin/ami-id" in   LatestAmiId field
+
+
 The stack will create the following resource:
 
 * A security group that allows SSH traffic from the Internet and traffic between Slurm nodes

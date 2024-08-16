@@ -30,7 +30,7 @@ Parameters:
 
   LatestAmiId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    Description: SSM Parameter name of the base image id for plugin
 
   HeadNodeInstanceType:
     Type: String
@@ -152,6 +152,7 @@ Resources:
                   - ec2:CreateTags
                   - ec2:DescribeInstances
                   - iam:CreateServiceLinkedRole
+                  - s3:getObject
                 Resource: '*'
               - Effect: Allow
                 Action: iam:PassRole
@@ -188,9 +189,7 @@ Resources:
           Fn::Base64:
             !Sub |
               #!/bin/bash -x
-              yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-              yum install munge munge-libs munge-devel -y
-
+              
               echo "welcometoslurmamazonuserwelcometoslurmamazonuserwelcometoslurmamazonuser" | tee /etc/munge/munge.key
               chown munge:munge /etc/munge/munge.key
               chmod 600 /etc/munge/munge.key
@@ -199,8 +198,6 @@ Resources:
               systemctl enable munge
               systemctl start munge
               sleep 15
-
-              yum install openssl openssl-devel pam-devel numactl numactl-devel hwloc hwloc-devel lua lua-devel readline-devel rrdtool-devel ncurses-devel man2html libibmad libibumad rpm-build -y
 
               mkdir -p /nfs
               mount -t nfs ${HeadNodeNetworkInterface.PrimaryPrivateIpAddress}:/nfs /nfs
@@ -228,14 +225,6 @@ Resources:
           Fn::Base64:
             !Sub |
               #!/bin/bash -x
-              # Install packages
-              yum update -y
-              yum install nfs-utils python2 python2-pip python3 python3-pip -y
-              yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-              yum install munge munge-libs munge-devel openssl openssl-devel pam-devel numactl numactl-devel hwloc hwloc-devel lua lua-devel readline-devel rrdtool-devel ncurses-devel man2html libibmad libibumad rpm-build libyaml http-parser-devel json-c-devel perl-devel -y
-              yum groupinstall "Development Tools" -y
-              pip3 install boto3
-              pip3 install awscli
 
               # Configure NFS share
               mkdir -p /nfs
